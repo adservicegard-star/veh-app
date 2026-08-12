@@ -272,10 +272,19 @@ const POSTE_LABELS = {
   litNonDeclare: "Préparation d'un lit non déclaré",
 };
 
+/* Durées, remises et modalités arrêtées par le président le 12 août 2026.
+   `ans` est la source unique pour le calcul des échéances : ne jamais déduire
+   la durée du libellé, sous peine de retomber silencieusement à un an. */
 const FORMULES = [
-  { id: 1, label: "1 étoile", duree: "Engagement 1 an", remise: 0, remiseDefinie: true, avantage: null, description: "Contrat classique, sans option prédéterminée, plein tarif." },
-  { id: 2, label: "2 étoiles", duree: "Engagement 2 ans", remise: 0, remiseDefinie: false, avantage: null, description: "Remise à définir." },
-  { id: 3, label: "3 étoiles", duree: "Engagement 3 ans", remise: 0, remiseDefinie: false, avantage: null, description: "Remise à définir, avec options supplémentaires payantes à définir." },
+  { id: 1, label: "1 étoile", duree: "Engagement 1 an", ans: 1, remise: 0, remiseDefinie: true,
+    paiement: "mensuel", avantage: null,
+    description: "Plein tarif, facturation mensuelle." },
+  { id: 2, label: "2 étoiles", duree: "Engagement 3 ans", ans: 3, remise: 0.10, remiseDefinie: true,
+    paiement: "annuel", avantage: "priorité de planning en haute saison",
+    description: "Remise de 10 %, tarifs garantis 3 ans, paiement annuel d'avance." },
+  { id: 3, label: "3 étoiles", duree: "Engagement 5 ans", ans: 5, remise: 0.15, remiseDefinie: true,
+    paiement: "annuel", avantage: "priorité absolue de planning et un avantage offert chaque année, au choix du Prestataire",
+    description: "Remise de 15 %, tarifs garantis 5 ans, paiement annuel d'avance." },
 ];
 function remiseLabel(f) {
   return f.remiseDefinie ? `${f.remise * 100}% de remise` : "Remise à définir";
@@ -1173,12 +1182,18 @@ Dans une telle situation, si le Prestataire doit préparer un ou plusieurs lits 
 Le Client s'engage à mettre à jour sans délai la composition du bien déclarée à l'article 2 dès qu'un couchage supplémentaire est identifié, afin d'éviter l'application de ces frais lors des passages suivants.
 
 Article 4 bis — Formule d'engagement
-Le Client souscrit à la formule « ${f.label} » (${f.duree}), ouvrant droit à ${f.remiseDefinie ? `une remise de ${f.remise * 100}%` : "une remise à définir entre les parties"} sur l'ensemble des prestations facturées.${f.avantage ? " Avantage associé : " + f.avantage + "." : ""}
+Le Client souscrit à la formule « ${f.label} » (${f.duree}), ouvrant droit à ${f.remise > 0 ? `une remise de ${Math.round(f.remise * 100)} %` : "aucune remise"} sur l'ensemble des prestations facturées.${f.avantage ? " Avantage associé : " + f.avantage + "." : ""}
+
+La remise est la contrepartie de la durée d'engagement souscrite. Elle n'est liée ni à la qualité de membre de l'association, ni à aucune adhésion, lesquelles n'ouvrent droit à aucune réduction tarifaire.
 
 Article 5 — Modalités de commande et de facturation
 Le Client communique au Prestataire, au minimum 48 heures avant chaque arrivée de voyageurs, le nombre de lits à préparer et la composition exacte du bien si celle-ci a été modifiée depuis la signature du contrat.
 
-La facturation est établie mensuellement, sur la base du détail des passages effectués, et réglée par virement dans un délai de 15 jours à réception de la facture.
+${f.paiement === "annuel"
+? `La facturation est établie annuellement et payable d'avance, au début de chaque année contractuelle, sur la base de la composition du bien déclarée à l'article 2 et du nombre de passages prévisionnel convenu entre les parties. Un décompte détaillé des passages réellement effectués est établi à la fin de chaque année contractuelle ; l'écart éventuel est régularisé, en complément ou en déduction, sur la facture de l'année suivante ou, au terme du contrat, par remboursement.
+
+Lorsque le présent contrat est conclu hors de l'établissement du Prestataire, aucun paiement ne peut être exigé ni reçu avant l'expiration d'un délai de sept jours à compter de sa conclusion, conformément à l'article L. 221-10 du code de la consommation. Le Client dispose en outre du droit de rétractation prévu par ce même code.`
+: `La facturation est établie mensuellement, sur la base du détail des passages effectués, et réglée par virement dans un délai de 15 jours à réception de la facture.`}
 
 Les forfaits ci-dessus sont indiqués hors taxes ; la TVA applicable, le cas échéant, sera précisée sur chaque facture selon le régime fiscal en vigueur pour l'association.
 
@@ -1211,7 +1226,11 @@ Article 10 — Durée et résiliation
 Le présent contrat est conclu pour une durée correspondant à la formule souscrite à l'article 4 bis (${f.duree}), renouvelable par tacite reconduction, sauf dénonciation par l'une des parties par lettre recommandée avec accusé de réception au moins un mois avant l'échéance.
 
 Chaque partie peut résilier le présent contrat de manière anticipée en cas de manquement grave de l'autre partie à ses obligations, après mise en demeure restée sans effet pendant 15 jours.
+${f.remise > 0 ? `
+En cas de résiliation anticipée du fait du Client, en dehors du cas d'un manquement du Prestataire, la remise consentie au titre de la formule d'engagement est perdue rétroactivement. Le Client est alors redevable de la différence entre les montants facturés avec remise et les montants qui auraient été dus au tarif standard, pour l'ensemble des passages réalisés depuis la prise d'effet du contrat. Les sommes déjà versées au titre de l'année contractuelle en cours s'imputent sur ce montant ; le solde est remboursé au Client ou dû par lui selon le cas.
 
+Cette clause est la contrepartie exacte de l'avantage tarifaire consenti : elle ne place le Client que dans la situation qui aurait été la sienne sans engagement de durée. Aucune autre indemnité n'est due au titre de la résiliation.
+` : ""}
 Article 11 — Litiges
 En cas de différend relatif à l'interprétation ou à l'exécution du présent contrat, les parties s'efforceront de trouver une solution amiable avant toute action contentieuse. À défaut, les tribunaux compétents du ressort du siège social du Prestataire seront seuls compétents.
 
@@ -2287,13 +2306,13 @@ function EcheancesView({ clients, adherents }) {
   const contratsAEcheance = clients.filter((c) => {
     if (c.contratStatut !== "Signé" || !c.contratDate) return false;
     const f = FORMULES.find((x) => x.id === c.formule) || FORMULES[0];
-    const ans = { "Engagement 1 an": 1, "Engagement 2 ans": 2, "Engagement 3 ans": 3 }[f.duree] || 1;
+    const ans = f.ans || 1;
     const echeance = new Date(c.contratDate + "T00:00");
     echeance.setFullYear(echeance.getFullYear() + ans);
     return dansNJours(echeance.toISOString().slice(0, 10), 60);
   }).map((c) => {
     const f = FORMULES.find((x) => x.id === c.formule) || FORMULES[0];
-    const ans = { "Engagement 1 an": 1, "Engagement 2 ans": 2, "Engagement 3 ans": 3 }[f.duree] || 1;
+    const ans = f.ans || 1;
     const echeance = new Date(c.contratDate + "T00:00");
     echeance.setFullYear(echeance.getFullYear() + ans);
     return { ...c, echeance: echeance.toISOString().slice(0, 10) };
